@@ -1,10 +1,11 @@
 class LuxOS {
     constructor() {
-        // GitHub API URL
-        this.apiUrl = "https://cors-anywhere.herokuapp.com/https://api.github.com/repos/doetoeri/LuxOSNet/contents/square.json"; // CORS 우회 프록시 추가
+        // GitHub API URL (CORS 우회 프록시 포함)
+        this.apiUrl = "https://cors-anywhere.herokuapp.com/https://api.github.com/repos/doetoeri/LuxOSNet/contents/square.json";
         this.headers = {
             "Accept": "application/vnd.github.v3+json",
             "Authorization": "Bearer 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", // Personal Access Token
+            "User-Agent": "LuxOSApp",
         };
         this.networks = {
             "SEOHAN123": "서한 전자",
