@@ -1,17 +1,16 @@
 class LuxOS {
     constructor() {
-        // GitHub API URL로 업데이트
-        this.apiUrl = "https://api.github.com/repos/doetoeri/LuxOSNet/contents/square.json";
+        this.apiUrl = "https://api.github.com/repos/doetoeri/LuxOSNet/contents/square.json"; // 데이터베이스 URL
         this.headers = {
             "Accept": "application/vnd.github.v3+json",
-            "Authorization": "Bearer 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", // Personal Access Token
+            "Authorization": "Bearer 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", // 새 Personal Access Token
         };
         this.networks = {
             "SEOHAN123": "서한 전자",
             "GROUP456": "서한 그룹",
             "SAVIT789": "새빛 소프텍",
         };
-        this.currentNetwork = null; // 현재 연결된 네트워크 키
+        this.currentNetwork = null; // 현재 연결된 네트워크
         this.commands = {};
         this.initCommands();
     }
@@ -66,24 +65,21 @@ class LuxOS {
         if (!this.currentNetwork) return "No network connected. Use 'connect <key>' to connect.";
         if (!content) return "Usage: post <message>";
         try {
-            // 기존 데이터 가져오기
             const response = await fetch(this.apiUrl, { headers: this.headers });
             if (!response.ok) throw new Error(`Failed to fetch Square data. Status: ${response.status}`);
             const data = await response.json();
             const database = JSON.parse(atob(data.content));
 
-            // 현재 네트워크 데이터 추가
             if (!database[this.currentNetwork]) database[this.currentNetwork] = [];
             database[this.currentNetwork].push(content);
 
-            // 데이터 업데이트
             await fetch(this.apiUrl, {
                 method: "PUT",
                 headers: this.headers,
                 body: JSON.stringify({
                     message: `Updated Square data for ${this.networks[this.currentNetwork]}`,
                     content: btoa(JSON.stringify(database)), // Base64 인코딩
-                    sha: data.sha, // 파일의 SHA
+                    sha: data.sha, // 파일 SHA
                 }),
             });
             return "Message posted.";
