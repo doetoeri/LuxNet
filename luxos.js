@@ -1,9 +1,9 @@
 class LuxOS {
     constructor() {
-        this.apiUrl = "https://api.github.com/repos/doetoeri/luxos-square/contents/square.json";
+        this.apiUrl = "https://api.github.com/repos/doetoeri/luxos-square/contents/square.json"; // Square 데이터 URL
         this.headers = {
             "Accept": "application/vnd.github.v3+json",
-            "Authorization": "Bearer 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",
+            "Authorization": "Bearer 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", // Personal Access Token
         };
         this.commands = {};
         this.initCommands();
@@ -44,6 +44,7 @@ class LuxOS {
     async postToSquare(content) {
         if (!content) return "Usage: post <message>";
         try {
+            // 기존 데이터 가져오기
             const response = await fetch(this.apiUrl, { headers: this.headers });
             if (!response.ok) throw new Error("Failed to fetch Square data.");
             const data = await response.json();
@@ -56,8 +57,8 @@ class LuxOS {
                 headers: this.headers,
                 body: JSON.stringify({
                     message: "Updated Square data",
-                    content: btoa(JSON.stringify(existingContent)),
-                    sha: data.sha,
+                    content: btoa(JSON.stringify(existingContent)), // Base64 인코딩
+                    sha: data.sha, // 파일의 SHA
                 }),
             });
             return "Message posted.";
