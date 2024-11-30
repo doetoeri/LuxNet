@@ -1,9 +1,9 @@
 class LuxOS {
     constructor() {
-        this.apiUrl = "https://api.github.com/repos/<username>/luxos-square/contents/square.json";
+        this.apiUrl = "https://api.github.com/repos/doetoeri/luxos-square/contents/square.json";
         this.headers = {
             "Accept": "application/vnd.github.v3+json",
-            "Authorization": "Bearer <your_github_token>", // Personal Access Token
+            "Authorization": "Bearer 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",
         };
         this.commands = {};
         this.initCommands();
@@ -16,6 +16,14 @@ class LuxOS {
             help: () =>
                 "Commands: view, post <message>",
         };
+    }
+
+    executeCommand(input) {
+        const [command, ...args] = input.split(" ");
+        if (this.commands[command]) {
+            return this.commands[command](args.join(" "));
+        }
+        return `Unknown command: ${command}`;
     }
 
     async viewSquare() {
@@ -59,3 +67,23 @@ class LuxOS {
         }
     }
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+    const luxOS = new LuxOS();
+    const inputField = document.getElementById("input");
+    const output = document.getElementById("output");
+
+    const execute = () => {
+        const command = inputField.value.trim();
+        if (command) {
+            luxOS.executeCommand(command).then((result) => {
+                output.textContent += `> ${command}\n${result}\n`;
+                inputField.value = "";
+            });
+        }
+    };
+
+    inputField.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") execute();
+    });
+});
