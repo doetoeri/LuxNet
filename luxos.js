@@ -1,78 +1,61 @@
 class LuxOS {
     constructor() {
-        this.networks = [
-            { name: "SAVIT* SOFTECH", key: "savitsf123", square: [] },
-            { name: "SEOHAN GROUP", key: "seohangrp456", square: [] },
-        ];
-        this.connectedNetwork = null; // 현재 연결된 전산망
+        this.apiUrl = "https://api.github.com/repos/<username>/luxos-square/contents/square.json";
+        this.headers = {
+            "Accept": "application/vnd.github.v3+json",
+            "Authorization": "Bearer <your_github_token>", // Personal Access Token
+        };
         this.commands = {};
         this.initCommands();
     }
 
     initCommands() {
         this.commands = {
-            connect: (key) => this.connectToNetwork(key),
-            disconnect: () => this.disconnectFromNetwork(),
-            post: (content) => this.postToSquare(content),
             view: () => this.viewSquare(),
+            post: (content) => this.postToSquare(content),
             help: () =>
-                "Commands: connect <key>, disconnect, post <message>, view",
+                "Commands: view, post <message>",
         };
     }
 
-    executeCommand(input) {
-        const [command, ...args] = input.split(" ");
-        if (this.commands[command]) {
-            return this.commands[command](args.join(" "));
+    async viewSquare() {
+        try {
+            const response = await fetch(this.apiUrl, { headers: this.headers });
+            const data = await response.json();
+            const content = atob(data.content); // Base64 디코딩
+            const messages = JSON.parse(content);
+            return messages.length
+                ? `Square Messages:\n${messages.join("\n")}`
+                : "Square is empty.";
+        } catch (err) {
+            return `Error: ${err.message}`;
         }
-        return `Unknown command: ${command}`;
     }
 
-    connectToNetwork(key) {
-        const network = this.networks.find((net) => net.key === key);
-        if (!network) return "Invalid key. Connection failed.";
-        this.connectedNetwork = network;
-        return `Connected to ${network.name}.`;
-    }
-
-    disconnectFromNetwork() {
-        if (!this.connectedNetwork) return "No network connected.";
-        const networkName = this.connectedNetwork.name;
-        this.connectedNetwork = null;
-        return `Disconnected from ${networkName}.`;
-    }
-
-    postToSquare(content) {
-        if (!this.connectedNetwork) return "No network connected.";
+    async postToSquare(content) {
         if (!content) return "Usage: post <message>";
-        this.connectedNetwork.square.push(content);
-        return `Message posted to ${this.connectedNetwork.name} Square.`;
-    }
+        try {
+            // 기존 데이터 가져오기
+            const response = await fetch(this.apiUrl, { headers: this.headers });
+            const data = await response.json();
+            const existingContent = JSON.parse(atob(data.content));
 
-    viewSquare() {
-        if (!this.connectedNetwork) return "No network connected.";
-        const messages = this.connectedNetwork.square;
-        return messages.length
-            ? `Square Messages:\n${messages.join("\n")}`
-            : "Square is empty.";
+            // 새 메시지 추가
+            existingContent.push(content);
+
+            // 업데이트 요청
+            await fetch(this.apiUrl, {
+                method: "PUT",
+                headers: this.headers,
+                body: JSON.stringify({
+                    message: "Updated Square data",
+                    content: btoa(JSON.stringify(existingContent)), // Base64 인코딩
+                    sha: data.sha,
+                }),
+            });
+            return "Message posted.";
+        } catch (err) {
+            return `Error: ${err.message}`;
+        }
     }
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-    const luxOS = new LuxOS();
-    const inputField = document.getElementById("input");
-    const output = document.getElementById("output");
-
-    const execute = () => {
-        const command = inputField.value.trim();
-        if (command) {
-            const result = luxOS.executeCommand(command);
-            output.textContent += `> ${command}\n${result}\n`;
-            inputField.value = '';
-        }
-    };
-
-    inputField.addEventListener("keypress", (e) => {
-        if (e.key === "Enter") execute();
-    });
-});
