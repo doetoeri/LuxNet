@@ -1,25 +1,16 @@
 class LuxOS {
     constructor() {
-        // 각 전산망의 API URL과 고유 키
-        this.networks = {
-            "seohan-electronics": {
-                apiUrl: "https://api.github.com/repos/doetoeri/seohan-electronics-square/contents/square.json",
-                key: "SEOHAN123",
-            },
-            "seohan-group": {
-                apiUrl: "https://api.github.com/repos/doetoeri/seohan-group-square/contents/square.json",
-                key: "GROUP456",
-            },
-            "savit-softech": {
-                apiUrl: "https://api.github.com/repos/doetoeri/savit-softech-square/contents/square.json",
-                key: "SAVIT789",
-            },
-        };
-        this.currentNetwork = null; // 현재 연결된 전산망
+        this.apiUrl = "https://api.github.com/repos/doetoeri/luxos-square/contents/square.json"; // 통합 데이터베이스 파일
         this.headers = {
             "Accept": "application/vnd.github.v3+json",
             "Authorization": "Bearer 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",
         };
+        this.networks = {
+            "SEOHAN123": "서한 전자",
+            "GROUP456": "서한 그룹",
+            "SAVIT789": "새빛 소프텍",
+        };
+        this.currentNetwork = null; // 현재 연결된 네트워크 키
         this.commands = {};
         this.initCommands();
     }
@@ -34,34 +25,37 @@ class LuxOS {
         };
     }
 
-    executeCommand(input) {
+    async executeCommand(input) {
         const [command, ...args] = input.split(" ");
         if (this.commands[command]) {
-            return this.commands[command](args.join(" "));
+            const result = await this.commands[command](args.join(" "));
+            return result;
         }
         return `Unknown command: ${command}`;
     }
 
     connectToNetwork(key) {
-        const network = Object.values(this.networks).find((net) => net.key === key);
-        if (!network) {
+        if (!this.networks[key]) {
             return "Invalid key. Connection failed.";
         }
-        this.currentNetwork = network;
-        return `Connected to ${Object.keys(this.networks).find((k) => this.networks[k] === network)}.`;
+        this.currentNetwork = key;
+        return `Connected to ${this.networks[key]}.`;
     }
 
     async viewSquare() {
         if (!this.currentNetwork) return "No network connected. Use 'connect <key>' to connect.";
         try {
-            const response = await fetch(this.currentNetwork.apiUrl, { headers: this.headers });
+            const response = await fetch(this.apiUrl, { headers: this.headers });
             if (!response.ok) throw new Error("Failed to fetch Square data.");
             const data = await response.json();
             const content = atob(data.content); // Base64 디코딩
-            const messages = JSON.parse(content);
-            return messages.length
-                ? `Square Messages:\n${messages.join("\n")}`
-                : "Square is empty.";
+            const database = JSON.parse(content);
+
+            if (!database[this.currentNetwork] || database[this.currentNetwork].length === 0) {
+                return `${this.networks[this.currentNetwork]} Square is empty.`;
+            }
+
+            return `${this.networks[this.currentNetwork]} Square Messages:\n${database[this.currentNetwork].join("\n")}`;
         } catch (err) {
             return `Error: ${err.message}`;
         }
@@ -71,19 +65,23 @@ class LuxOS {
         if (!this.currentNetwork) return "No network connected. Use 'connect <key>' to connect.";
         if (!content) return "Usage: post <message>";
         try {
-            const response = await fetch(this.currentNetwork.apiUrl, { headers: this.headers });
+            // 기존 데이터 가져오기
+            const response = await fetch(this.apiUrl, { headers: this.headers });
             if (!response.ok) throw new Error("Failed to fetch Square data.");
             const data = await response.json();
-            const existingContent = JSON.parse(atob(data.content));
+            const database = JSON.parse(atob(data.content));
 
-            existingContent.push(content);
+            // 현재 네트워크 데이터 추가
+            if (!database[this.currentNetwork]) database[this.currentNetwork] = [];
+            database[this.currentNetwork].push(content);
 
-            await fetch(this.currentNetwork.apiUrl, {
+            // 데이터 업데이트
+            await fetch(this.apiUrl, {
                 method: "PUT",
                 headers: this.headers,
                 body: JSON.stringify({
-                    message: "Updated Square data",
-                    content: btoa(JSON.stringify(existingContent)), // Base64 인코딩
+                    message: `Updated Square data for ${this.networks[this.currentNetwork]}`,
+                    content: btoa(JSON.stringify(database)), // Base64 인코딩
                     sha: data.sha, // 파일의 SHA
                 }),
             });
@@ -95,7 +93,7 @@ class LuxOS {
 
     disconnect() {
         if (!this.currentNetwork) return "No network connected.";
-        const networkName = Object.keys(this.networks).find((key) => this.networks[key] === this.currentNetwork);
+        const networkName = this.networks[this.currentNetwork];
         this.currentNetwork = null;
         return `Disconnected from ${networkName}.`;
     }
@@ -112,7 +110,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const command = inputField.value.trim();
             if (command) {
                 const result = await luxOS.executeCommand(command);
-                output.textContent += `\n> ${command}\n${result}`;
+                output.textContent += `> ${command}\n${result}`;
                 inputField.value = ""; // 입력 필드 초기화
                 output.scrollTop = output.scrollHeight; // 스크롤을 가장 아래로 이동
             }
