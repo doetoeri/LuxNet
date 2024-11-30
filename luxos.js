@@ -1,9 +1,10 @@
 class LuxOS {
     constructor() {
-        this.apiUrl = "https://api.github.com/repos/doetoeri/luxos-square/contents/square.json"; // 통합 데이터베이스 파일
+        // GitHub API URL로 업데이트
+        this.apiUrl = "https://api.github.com/repos/doetoeri/LuxOSNet/contents/square.json";
         this.headers = {
             "Accept": "application/vnd.github.v3+json",
-            "Authorization": "Bearer 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",
+            "Authorization": "Bearer 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", // Personal Access Token
         };
         this.networks = {
             "SEOHAN123": "서한 전자",
@@ -46,7 +47,7 @@ class LuxOS {
         if (!this.currentNetwork) return "No network connected. Use 'connect <key>' to connect.";
         try {
             const response = await fetch(this.apiUrl, { headers: this.headers });
-            if (!response.ok) throw new Error("Failed to fetch Square data.");
+            if (!response.ok) throw new Error(`Failed to fetch Square data. Status: ${response.status}`);
             const data = await response.json();
             const content = atob(data.content); // Base64 디코딩
             const database = JSON.parse(content);
@@ -67,7 +68,7 @@ class LuxOS {
         try {
             // 기존 데이터 가져오기
             const response = await fetch(this.apiUrl, { headers: this.headers });
-            if (!response.ok) throw new Error("Failed to fetch Square data.");
+            if (!response.ok) throw new Error(`Failed to fetch Square data. Status: ${response.status}`);
             const data = await response.json();
             const database = JSON.parse(atob(data.content));
 
