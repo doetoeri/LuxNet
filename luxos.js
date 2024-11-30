@@ -1,9 +1,10 @@
 class LuxOS {
     constructor() {
-        this.apiUrl = "https://api.github.com/repos/doetoeri/LuxOSNet/contents/square.json"; // 데이터베이스 URL
+        // GitHub API URL
+        this.apiUrl = "https://cors-anywhere.herokuapp.com/https://api.github.com/repos/doetoeri/LuxOSNet/contents/square.json"; // CORS 우회 프록시 추가
         this.headers = {
             "Accept": "application/vnd.github.v3+json",
-            "Authorization": "Bearer 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", // 새 Personal Access Token
+            "Authorization": "Bearer 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", // Personal Access Token
         };
         this.networks = {
             "SEOHAN123": "서한 전자",
@@ -46,7 +47,7 @@ class LuxOS {
         if (!this.currentNetwork) return "No network connected. Use 'connect <key>' to connect.";
         try {
             const response = await fetch(this.apiUrl, { headers: this.headers });
-            if (!response.ok) throw new Error(`Failed to fetch Square data. Status: ${response.status}`);
+            if (!response.ok) throw new Error(`Failed to fetch Square data. Status: ${response.status}. ${response.statusText}`);
             const data = await response.json();
             const content = atob(data.content); // Base64 디코딩
             const database = JSON.parse(content);
@@ -57,6 +58,7 @@ class LuxOS {
 
             return `${this.networks[this.currentNetwork]} Square Messages:\n${database[this.currentNetwork].join("\n")}`;
         } catch (err) {
+            console.error("Error details:", err);
             return `Error: ${err.message}`;
         }
     }
@@ -66,7 +68,7 @@ class LuxOS {
         if (!content) return "Usage: post <message>";
         try {
             const response = await fetch(this.apiUrl, { headers: this.headers });
-            if (!response.ok) throw new Error(`Failed to fetch Square data. Status: ${response.status}`);
+            if (!response.ok) throw new Error(`Failed to fetch Square data. Status: ${response.status}. ${response.statusText}`);
             const data = await response.json();
             const database = JSON.parse(atob(data.content));
 
@@ -84,6 +86,7 @@ class LuxOS {
             });
             return "Message posted.";
         } catch (err) {
+            console.error("Error details:", err);
             return `Error: ${err.message}`;
         }
     }
