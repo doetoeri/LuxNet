@@ -1,9 +1,9 @@
 class LuxOS {
     constructor() {
-        this.apiUrl = "https://api.github.com/repos/doetoeri/luxos-square/contents/square.json";
+        this.apiUrl = "https://api.github.com/repos/doetoeri/luxos-square/contents/square.json"; // doetoeri 계정의 Repository
         this.headers = {
             "Accept": "application/vnd.github.v3+json",
-            "Authorization": "Bearer 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",
+            "Authorization": "Bearer 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", // Personal Access Token
         };
         this.commands = {};
         this.initCommands();
@@ -13,8 +13,7 @@ class LuxOS {
         this.commands = {
             view: () => this.viewSquare(),
             post: (content) => this.postToSquare(content),
-            help: () =>
-                "Commands: view, post <message>",
+            help: () => "Commands: view, post <message>",
         };
     }
 
@@ -29,6 +28,7 @@ class LuxOS {
     async viewSquare() {
         try {
             const response = await fetch(this.apiUrl, { headers: this.headers });
+            if (!response.ok) throw new Error("Failed to fetch Square data.");
             const data = await response.json();
             const content = atob(data.content); // Base64 디코딩
             const messages = JSON.parse(content);
@@ -45,20 +45,21 @@ class LuxOS {
         try {
             // 기존 데이터 가져오기
             const response = await fetch(this.apiUrl, { headers: this.headers });
+            if (!response.ok) throw new Error("Failed to fetch Square data.");
             const data = await response.json();
             const existingContent = JSON.parse(atob(data.content));
 
             // 새 메시지 추가
             existingContent.push(content);
 
-            // 업데이트 요청
+            // 데이터 업데이트
             await fetch(this.apiUrl, {
                 method: "PUT",
                 headers: this.headers,
                 body: JSON.stringify({
                     message: "Updated Square data",
                     content: btoa(JSON.stringify(existingContent)), // Base64 인코딩
-                    sha: data.sha,
+                    sha: data.sha, // 파일의 현재 SHA
                 }),
             });
             return "Message posted.";
