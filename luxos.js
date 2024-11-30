@@ -1,9 +1,9 @@
 class LuxOS {
     constructor() {
-        this.apiUrl = "https://api.github.com/repos/doetoeri/luxos-square/contents/square.json"; // doetoeri 계정의 Repository
+        this.apiUrl = "https://api.github.com/repos/doetoeri/luxos-square/contents/square.json";
         this.headers = {
             "Accept": "application/vnd.github.v3+json",
-            "Authorization": "Bearer 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", // Personal Access Token
+            "Authorization": "Bearer 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",
         };
         this.commands = {};
         this.initCommands();
@@ -17,10 +17,11 @@ class LuxOS {
         };
     }
 
-    executeCommand(input) {
+    async executeCommand(input) {
         const [command, ...args] = input.split(" ");
         if (this.commands[command]) {
-            return this.commands[command](args.join(" "));
+            const result = await this.commands[command](args.join(" "));
+            return result;
         }
         return `Unknown command: ${command}`;
     }
@@ -43,23 +44,20 @@ class LuxOS {
     async postToSquare(content) {
         if (!content) return "Usage: post <message>";
         try {
-            // 기존 데이터 가져오기
             const response = await fetch(this.apiUrl, { headers: this.headers });
             if (!response.ok) throw new Error("Failed to fetch Square data.");
             const data = await response.json();
             const existingContent = JSON.parse(atob(data.content));
 
-            // 새 메시지 추가
             existingContent.push(content);
 
-            // 데이터 업데이트
             await fetch(this.apiUrl, {
                 method: "PUT",
                 headers: this.headers,
                 body: JSON.stringify({
                     message: "Updated Square data",
-                    content: btoa(JSON.stringify(existingContent)), // Base64 인코딩
-                    sha: data.sha, // 파일의 현재 SHA
+                    content: btoa(JSON.stringify(existingContent)),
+                    sha: data.sha,
                 }),
             });
             return "Message posted.";
@@ -74,17 +72,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const inputField = document.getElementById("input");
     const output = document.getElementById("output");
 
-    const execute = () => {
-        const command = inputField.value.trim();
-        if (command) {
-            luxOS.executeCommand(command).then((result) => {
-                output.textContent += `> ${command}\n${result}\n`;
-                inputField.value = "";
-            });
+    // Enter 입력 시 명령어 처리
+    inputField.addEventListener("keypress", async (e) => {
+        if (e.key === "Enter") {
+            const command = inputField.value.trim();
+            if (command) {
+                const result = await luxOS.executeCommand(command);
+                output.textContent += `\n> ${command}\n${result}`;
+                inputField.value = ""; // 입력 필드 초기화
+                output.scrollTop = output.scrollHeight; // 스크롤을 가장 아래로 이동
+            }
         }
-    };
-
-    inputField.addEventListener("keypress", (e) => {
-        if (e.key === "Enter") execute();
     });
 });
