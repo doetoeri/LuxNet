@@ -1,9 +1,24 @@
 class LuxOS {
     constructor() {
-        this.apiUrl = "https://api.github.com/repos/doetoeri/luxos-square/contents/square.json"; // Square 데이터 URL
+        // 각 전산망의 API URL과 고유 키
+        this.networks = {
+            "seohan-electronics": {
+                apiUrl: "https://api.github.com/repos/doetoeri/seohan-electronics-square/contents/square.json",
+                key: "SEOHAN123",
+            },
+            "seohan-group": {
+                apiUrl: "https://api.github.com/repos/doetoeri/seohan-group-square/contents/square.json",
+                key: "GROUP456",
+            },
+            "savit-softech": {
+                apiUrl: "https://api.github.com/repos/doetoeri/savit-softech-square/contents/square.json",
+                key: "SAVIT789",
+            },
+        };
+        this.currentNetwork = null; // 현재 연결된 전산망
         this.headers = {
             "Accept": "application/vnd.github.v3+json",
-            "Authorization": "Bearer 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", // Personal Access Token
+            "Authorization": "Bearer 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",
         };
         this.commands = {};
         this.initCommands();
@@ -11,24 +26,35 @@ class LuxOS {
 
     initCommands() {
         this.commands = {
+            connect: (key) => this.connectToNetwork(key),
             view: () => this.viewSquare(),
             post: (content) => this.postToSquare(content),
-            help: () => "Commands: view, post <message>",
+            disconnect: () => this.disconnect(),
+            help: () => "Commands: connect <key>, view, post <message>, disconnect",
         };
     }
 
-    async executeCommand(input) {
+    executeCommand(input) {
         const [command, ...args] = input.split(" ");
         if (this.commands[command]) {
-            const result = await this.commands[command](args.join(" "));
-            return result;
+            return this.commands[command](args.join(" "));
         }
         return `Unknown command: ${command}`;
     }
 
+    connectToNetwork(key) {
+        const network = Object.values(this.networks).find((net) => net.key === key);
+        if (!network) {
+            return "Invalid key. Connection failed.";
+        }
+        this.currentNetwork = network;
+        return `Connected to ${Object.keys(this.networks).find((k) => this.networks[k] === network)}.`;
+    }
+
     async viewSquare() {
+        if (!this.currentNetwork) return "No network connected. Use 'connect <key>' to connect.";
         try {
-            const response = await fetch(this.apiUrl, { headers: this.headers });
+            const response = await fetch(this.currentNetwork.apiUrl, { headers: this.headers });
             if (!response.ok) throw new Error("Failed to fetch Square data.");
             const data = await response.json();
             const content = atob(data.content); // Base64 디코딩
@@ -42,17 +68,17 @@ class LuxOS {
     }
 
     async postToSquare(content) {
+        if (!this.currentNetwork) return "No network connected. Use 'connect <key>' to connect.";
         if (!content) return "Usage: post <message>";
         try {
-            // 기존 데이터 가져오기
-            const response = await fetch(this.apiUrl, { headers: this.headers });
+            const response = await fetch(this.currentNetwork.apiUrl, { headers: this.headers });
             if (!response.ok) throw new Error("Failed to fetch Square data.");
             const data = await response.json();
             const existingContent = JSON.parse(atob(data.content));
 
             existingContent.push(content);
 
-            await fetch(this.apiUrl, {
+            await fetch(this.currentNetwork.apiUrl, {
                 method: "PUT",
                 headers: this.headers,
                 body: JSON.stringify({
@@ -65,6 +91,13 @@ class LuxOS {
         } catch (err) {
             return `Error: ${err.message}`;
         }
+    }
+
+    disconnect() {
+        if (!this.currentNetwork) return "No network connected.";
+        const networkName = Object.keys(this.networks).find((key) => this.networks[key] === this.currentNetwork);
+        this.currentNetwork = null;
+        return `Disconnected from ${networkName}.`;
     }
 }
 
