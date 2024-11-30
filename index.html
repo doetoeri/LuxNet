@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LuxOS Square</title>
+    <style>
+        body {
+            background-color: black;
+            color: green;
+            font-family: monospace;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        #output {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            white-space: pre-wrap;
+        }
+        #input {
+            border: none;
+            background: black;
+            color: green;
+            font-size: 16px;
+            padding: 10px;
+            outline: none;
+        }
+        #input::placeholder {
+            color: darkgreen;
+        }
+    </style>
+</head>
+<body>
+    <div id="output">Welcome to LuxOS*\nType 'help' for a list of commands.\n</div>
+    <input type="text" id="input" placeholder="Type a command here...">
+    <script src="luxos.js"></script>
+</body>
+</html>
